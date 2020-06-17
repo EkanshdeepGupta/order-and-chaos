@@ -1,0 +1,159 @@
+{% extends "layout.html" %}
+
+{% block scripts %}
+<style type="text/css">
+
+#overlay {
+	position: fixed;
+	top:0px;
+	left:0px;
+	height: 100%;
+	width: 100%;
+	z-index: -1;
+}
+
+.button {
+	width: 150px;
+	font-family : inherit;
+	font-size: 2em;
+	//position:absolute;
+	margin-top: 10%;
+	padding: 10px;
+}
+
+#joinButton {
+	margin-left: calc(50% - 200px);
+}
+
+#createButton {
+	float: right;
+	margin-right: calc(50% - 200px);
+}
+
+.hover-box {
+	display: none;
+	position: absolute;
+	top:0;
+	bottom: 0;
+	right: 0;
+	left:0;
+	margin: auto auto;
+	background: white;
+	border: 1px black solid;
+	height: 170px;
+	padding: 30px 25px;
+	width: 300px;
+	border-radius: 10px;
+	/line-height: 200%;
+}
+
+.hover-inner {
+	border:0px black solid;
+	line-height: 2em;
+	align:center;
+	padding-right: -10px;
+	padding-top: -10px;
+	vertical-align: middle;
+}
+
+#error_message {
+    margin-top: 30px;
+    text-align: center;
+    color: red;
+    font-size: xx-large;
+}
+
+</style>
+
+<script type="text/javascript">
+
+function joinGame() {
+	document.getElementById("join").style.display = "block";
+	document.getElementById("join").style.zIndex = 15;
+	document.getElementById("join-room-name").focus();
+	overlay();
+}
+
+function createGame() {
+	document.getElementById("create").style.display = "block";
+	document.getElementById("create").style.zIndex = 15;
+	document.getElementById("create-room-name").focus();
+	overlay();
+}
+
+function validateForm(form) {
+    if (form.room_name.value == "" && form.player_name.value == "") {
+        alert("Room name and player name cannot be blank.");
+        form.room_name.focus();
+        return false;
+    }
+
+    else if (form.room_name.value == "") {
+    	alert("Room name cannot be blank.");
+        form.room_name.focus();
+        return false;
+    }
+
+    else if (form.player_name.value == "") {
+    	alert("Player name cannot be blank.");
+        form.room_name.focus();
+        return false;
+    }
+    if (!/^[a-zA-Z0-9\-_]*$/g.test(form.room_name.value) || !/^[a-zA-Z0-9\-_]*$/g.test(form.player_name.value)) {
+        alert("Invalid characters. Please use alphanumeric characters only. No spaces.");
+        form.room_name.focus();
+        return false;
+    }
+}
+
+</script>
+{% endblock %}
+
+{% block content %}
+
+<button class="button" id="joinButton" onclick="joinGame()">Join</button>
+<button class="button" id="createButton" onclick="createGame()">Create</button>
+
+<div id="join" class="hover-box">
+	<div class="closeButton" onclick="closeButton('join')">&#10006</div>
+		<div id="joinInner" class="hover-inner">
+			<form id="joinForm" action="/play" onsubmit="return validateForm(this)" method="post">
+				<label>Enter Room Code: </label><input id="join-room-name" type="text" name="room_name"> </br>
+				<label>Enter Name: </label><input type="text" name="player_name"> </br>
+				<input type="submit" value="Go">
+			</form>
+		</div>
+	</div>
+</div>
+
+<div id="create" class="hover-box" >
+	<div class="closeButton" onclick="closeButton('create')">&#10006</div>
+		<div id="createInner" class="hover-inner">
+			<form id="createForm" action="/play" onsubmit="return validateForm(this)" method="post">
+				<label>Enter New Room Code: </label><input id="create-room-name" type="text" name="room_name" id="room"> </br>
+				<label>Enter Name: </label><input type="text" name="player_name" id="player"> </br>
+				<input style="margin-top: 10px;" type="submit" value="Go">
+			</form>
+		</div>
+	</div>
+</div>
+
+<div id="error_message">
+	{{ error_message }}
+</div>
+{% endblock %}
+
+
+{% block postscripts %}
+<script type="text/javascript">
+$('#joinForm').submit(function(eventObj) {
+    $(this).append('<input type="hidden" name="player_index" value="1" /> ');
+    return true;
+});
+
+$('#createForm').submit(function(eventObj) {
+    $(this).append('<input type="hidden" name="player_index" value="0" /> ');
+    return true;
+});
+</script>
+{% endblock %}

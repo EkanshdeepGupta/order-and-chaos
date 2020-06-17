@@ -1,0 +1,573 @@
+{% extends "layout.html" %}
+
+{% block scripts %}
+
+<style type="text/css">
+
+#overlay {
+	position: fixed;
+	top:0px;
+	left:0px;
+	height: 100%;
+	width: 100%;
+	z-index: -1;
+}
+
+.button {
+	display: none;
+	width: 150px;
+	font-size: 2em;
+	//position: absolute;
+	margin-top: 2%;
+	padding: 10px;
+}
+
+.hover-box {
+	display: none;
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	right: 0;
+	left:0;
+	margin: auto auto;
+	background: white;
+	border: 1px black solid;
+	height: 150px;
+	padding: 30px 25px;
+	width: 500px;
+	border-radius: 10px;
+	/line-height: 200%;
+}
+
+.hover-inner {
+	border:0px black solid;
+	line-height: 2em;
+	align:center;
+	padding-right: -10px;
+	padding-top: -10px;
+	vertical-align: middle;
+}
+
+#player-info {
+	height: 70px;
+	width: 100%;
+	margin-top: 15px;
+}
+
+#playing-area {
+	margin-top: 15px;
+}
+
+.player-individual {
+	display: table-cell;
+	width: 50%;
+	padding-left:10px;
+	padding-right:10px;
+}
+
+.player-individual-table {
+	height: 100%;
+	width: 70%;
+	text-align: center;
+	border: black solid 1px;
+	border-radius: 10px;
+	background: wheat;
+	margin: auto;
+}
+
+.player-loading {
+	width: 10%;
+}
+
+.player-role {
+	width: 20%;
+}
+
+#player-0 {	
+}
+
+#player-1 {
+}
+
+#redButton {
+	margin-left: calc(50% - 200px);
+}
+
+#blueButton {
+	float: right;
+	margin-right: calc(50% - 200px);
+}
+
+#order-button-chooser {
+	margin-left: calc(50% - 100px);
+	float: left;
+}
+
+#chaos-button-chooser {
+	margin-right: calc(50% - 100px);
+	float: right;
+}
+
+#playing-board {
+	border-spacing: 0px;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.game-tile {
+	height: 50px;
+	width: 50px;
+	border:1px black solid;
+	border-radius: 2px;
+	background: white;
+}
+
+.game-tile-1 {
+	background: red;
+}
+
+.game-tile-2 {
+	background: blue;
+}
+
+#score {
+	float: right;
+}
+</style>
+<link id="cell-styles" rel="stylesheet" href= "{{ url_for('static',filename='cellStyle.css') }}">
+
+<script type="text/javascript">
+
+myPlayerIndex = {{ player|tojson|safe }}
+room_name = {{ gameConfig.room_name|tojson|safe }}
+
+function setPlayerLoading(player_index) {
+	document.getElementById('loading-div-' + player_index.toString()).innerHTML = '<img id="loading-gif" height="" src="{{ url_for('static', filename='loading.gif') }}">';
+
+	$("#loading-gif").css('height', '30px');
+}
+
+function removePlayerLoading(player_index) {
+	document.getElementById('loading-div-' + player_index.toString()).innerHTML = '';
+}
+
+function xmlrequestFormData() {
+	var params = new FormData();
+	params.append('room_name', room_name);
+	params.append('player_index', myPlayerIndex.toString())
+
+	return params
+}
+
+function reStyleCells(stylesheet){
+   $('#cell-styles').attr("href",stylesheet);
+}
+
+function beforeGameStartLoop(){ // Loop for when player 0 logs on and is waiting for player 1 to log on.
+	var myRequest = new XMLHttpRequest();
+	var params = xmlrequestFormData()
+
+	myRequest.open('POST', '/pregame', true); 
+
+	myRequest.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			var myResponseJSON = JSON.parse(this.responseText);
+
+			if (myResponseJSON.validRoom && !myResponseJSON.gameStarted) {
+
+				if (myResponseJSON.chooseRole) {
+					document.getElementById('player-1-name').innerHTML = myResponseJSON.player_1_name
+					document.getElementById('score').innerHTML = "Score: 0-0"
+					chooseRolePopUp();
+				}
+
+				else {
+					setTimeout(beforeGameStartLoop, 300);
+				}
+			}
+		}
+	}
+
+	myRequest.send(params);
+}
+
+function waitGameStartLoop() { // Loop for when player 1 logs on and is waiting for player 0 to choose starting role.
+	var myRequest = new XMLHttpRequest();
+	var params = xmlrequestFormData()
+
+	myRequest.open('POST', '/pregame', true); 
+
+	myRequest.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			var myResponseJSON = JSON.parse(this.responseText);
+
+			if (myResponseJSON.validRoom) {
+				if (myResponseJSON.gameStarted) {
+					document.getElementById('score').innerHTML = "Score: 0-0"
+
+					if (myResponseJSON.orderPlayer == 0) {
+						document.getElementById("player-0-role").innerHTML = 'Order'
+						document.getElementById("player-1-role").innerHTML = 'Chaos'
+						turnWait();
+					}
+
+					else if (myResponseJSON.orderPlayer == 1){
+						document.getElementById("player-0-role").innerHTML = 'Chaos'
+						document.getElementById("player-1-role").innerHTML = 'Order'
+						removePlayerLoading(0);
+						myTurn();
+					}
+				}
+
+				else {
+					setTimeout(waitGameStartLoop, 300);
+				}
+
+			}
+		}
+	}
+
+	myRequest.send(params);
+}
+
+function chooseRolePopUp() {
+	removePlayerLoading(1);
+	document.getElementById("chooseRole").style.display = "block";
+	document.getElementById("chooseRole").style.zIndex = 15;
+	overlay();
+}
+
+function roleChosen(roleIndex) {
+	document.getElementById("chooseRole").style.display = "none";
+	removeOverlay()
+
+	var myRequest = new XMLHttpRequest();
+	var params = xmlrequestFormData()
+	params.append('player_0_role', roleIndex.toString());
+
+	myRequest.open('POST', '/role_chosen', true);
+	myRequest.send(params);
+
+	if (roleIndex == 0) {
+		document.getElementById("player-0-role").innerHTML = 'Order'
+		document.getElementById("player-1-role").innerHTML = 'Chaos'
+
+		myTurn();
+	}
+
+	else {
+		document.getElementById("player-0-role").innerHTML = 'Chaos'
+		document.getElementById("player-1-role").innerHTML = 'Order'
+
+		setPlayerLoading(1);
+		turnWait();
+	}
+}
+
+function myTurn() {
+	$('.button').css("display", "inline");
+	removePlayerLoading(1 - myPlayerIndex);
+
+	$('.game-tile-0').css('cursor', 'pointer');
+}
+
+function redTurn() {
+	$('.game-tile').unbind('click')
+	$('.game-tile-0').click(function() {
+		turnPlayed(this, 1);
+	});
+
+	$('.game-tile-0').hover(function() {
+		$(this).css("background", "#fac4bb");
+	},
+	function() {
+		$(this).css("background", "");
+	});
+}
+
+function blueTurn() {
+	$('.game-tile').unbind('click')
+	$('.game-tile-0').click(function() {
+		turnPlayed(this, 2);
+	});
+
+	$('.game-tile-0').hover(function() {
+		$(this).css("background", "#d1e3ff");
+	},
+	function() {
+		$(this).css("background", "");
+	});
+}
+
+function turnPlayed(elt, color) {
+	$('.button').css("display", "none");
+	$('#' + elt.id).css("background", "");
+	$('.game-tile').unbind('mouseenter mouseleave click')
+	$('.game-tile').css('cursor', 'default');
+	console.log(color)
+	$('#' + elt.id).removeClass('game-tile-0').addClass('game-tile-' + color.toString());
+	reStyleCells("{{ url_for('static',filename='cellStyle.css') }}" + '?v=' + new Date().getTime());
+	
+	var myRequest = new XMLHttpRequest();
+	var params = xmlrequestFormData()
+
+	params.append('cell', elt.id);
+	params.append('color', color.toString())
+
+	myRequest.open('POST', '/turn_played', true);
+
+	myRequest.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			var myResponseJSON = JSON.parse(this.responseText);
+
+			if (myResponseJSON.validRoom) {
+				if (myResponseJSON.gameOver) {
+					document.getElementById('score').innerHTML = "Score: " + myResponseJSON.score[0].toString() + "-" + myResponseJSON.score[1].toString();
+					alert(myResponseJSON.gameOverMessage);
+					newGamePopUp();
+				}
+
+				else {
+					setPlayerLoading(1 - myPlayerIndex);
+					turnWait();
+				} 
+			}
+		}
+	}
+
+	myRequest.send(params);
+}
+
+function turnWait() {
+	var myRequest = new XMLHttpRequest();
+
+	var params = xmlrequestFormData()
+
+	myRequest.open('POST', '/turn_wait', true); 
+
+	myRequest.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			var myResponseJSON = JSON.parse(this.responseText);
+			var turn = myResponseJSON.turn
+
+			if (myResponseJSON.validRoom) {
+				if (myResponseJSON.gameOver) {
+					document.getElementById('score').innerHTML = "Score: " + myResponseJSON.score[0].toString() + "-" + myResponseJSON.score[1].toString();
+					removePlayerLoading(1 - myPlayerIndex);
+
+					alert(myResponseJSON.gameOverMessage);
+					newGameWait();
+				}
+
+				else if (turn) {
+					$('#cell-' + turn[0].toString() + '-' + turn[1].toString()).removeClass('game-tile-0').addClass('game-tile-' + turn[2].toString());
+
+					reStyleCells("{{ url_for('static', filename='cellStyle.css') }}" + '?v=' + new Date().getTime());
+
+					myTurn();
+				}
+
+				else {
+					setTimeout(turnWait, 300);
+				}
+			}
+
+			
+		}
+	}
+
+	myRequest.send(params);
+
+}
+
+function newGameWait() {
+	var myRequest = new XMLHttpRequest();
+	var params = xmlrequestFormData()
+
+	myRequest.open('POST', '/new_game_wait', true);
+
+	myRequest.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			var myResponseJSON = JSON.parse(this.responseText);
+
+			if (myResponseJSON.validRoom) {
+				if (myResponseJSON.newGame == 1) {
+					newGameClientCleanUp(myResponseJSON.orderPlayer);
+				}
+
+				else if (myResponseJSON.newGame == 0) {
+					setTimeout(newGameWait, 300);
+				}
+
+				else if (myResponseJSON.newGame == -1) {
+					finish()
+				}
+			}
+		}
+	}
+
+	myRequest.send(params);
+}
+
+function newGamePopUp() {
+	document.getElementById("newGame").style.display = "block";
+	document.getElementById("newGame").style.zIndex = 15;
+	overlay();
+}
+
+function newGame(playagain) {
+	document.getElementById("newGame").style.display = "none";
+	removeOverlay();
+
+	var myRequest = new XMLHttpRequest();
+	var params = xmlrequestFormData()
+	params.append('new_game_bool', playagain.toString());
+
+	myRequest.open('POST', '/new_game', true);
+
+	if (playagain) {
+		myRequest.onreadystatechange = function() {
+			if (this.readyState == 4 && this.status == 200) {
+				var myResponseJSON = JSON.parse(this.responseText);
+
+				if (myResponseJSON.validRoom) {
+
+					newGameClientCleanUp(myResponseJSON.orderPlayer)
+
+				}
+			}
+		}
+		
+	}
+
+	else {
+		finish();
+	}
+
+	myRequest.send(params);
+}
+
+function finish() {
+
+}
+
+function newGameClientCleanUp(orderPlayer) {
+	$('.game-tile-1').removeClass('game-tile-1').addClass('game-tile-0');
+	$('.game-tile-2').removeClass('game-tile-2').addClass('game-tile-0');
+	reStyleCells("{{ url_for('static',filename='cellStyle.css') }}" + '?v=' + new Date().getTime());
+
+	document.getElementById("player-"+ orderPlayer.toString()+ "-role").innerHTML = 'Order'
+	document.getElementById("player-"+ (1-orderPlayer).toString() +"-role").innerHTML = 'Chaos'
+
+	if (orderPlayer == myPlayerIndex) {
+		myTurn();
+	}
+
+	else {
+		setPlayerLoading(1 - myPlayerIndex);
+		turnWait();
+	}
+}
+</script>
+
+{% endblock %}
+
+{% block content %}
+
+
+<div starting-info>
+<span id="room-name">
+Room name: {{gameConfig.room_name | safe}}
+</span>
+<span id="score">
+</span>
+</div>
+</table>
+<table id="player-info">
+<tbody >
+	<tr>
+	<td id="player-0" class="player-individual">
+		<table id="player-0-table" class="player-individual-table">
+		<tr>
+			<td id="player-0-loading" class="player-loading">
+				<span id="loading-div-0" class="loading-div"></span>
+			</td>
+			<td id="player-0-name" class="player-name">	
+			</td>
+			<td id="player-0-role" class="player-role">
+			</td>
+		</tr>
+		</table>
+	</td>
+
+	<td id="player-1" class="player-individual">
+		<table id="player-1-table" class="player-individual-table">
+		<tr>
+			<td id="player-1-loading" class="player-loading">
+				<span id="loading-div-1" class="loading-div"></span>
+			</td>
+			<td id="player-1-name" class="player-name">
+			</td>
+			<td id="player-1-role" class="player-role">
+			</td>
+		</tr>
+		</table>
+	</td>
+	</tr>
+</tbody>
+</table>
+<div id="playing-area">
+<table id="playing-board">
+<tbody>
+	{% for i in range(6) %}
+	<tr>
+		{% for j in range(6) %}
+		<td class="game-tile game-tile-0" id="cell-{{i}}-{{j}}"></td>
+		{% endfor %}
+	</tr>
+	{% endfor %}
+</tbody>
+</table>
+</div>
+
+<div id="chooseRole" class="hover-box">
+	<p align="center" style="margin-bottom: 35px;"> Choose your role: </p>
+	<input id="order-button-chooser" type="button" value="Order" onclick="roleChosen(0)">
+	<input id="chaos-button-chooser" type="button" value="Chaos" onclick="roleChosen(1)">
+</div>
+
+<div id="newGame" class="hover-box">
+	<p align="center" style="margin-bottom: 35px;"> Play again? </p>
+	<input id="order-button-chooser" type="button" value="Yes" onclick="newGame(true)">
+	<input id="chaos-button-chooser" type="button" value="No" onclick="newGame(false)">
+</div>
+
+<button class="button" id="redButton" onclick="redTurn()">Red</button>
+<button class="button" id="blueButton" onclick="blueTurn()">Blue</button>
+
+{% endblock %}
+
+
+{% block postscripts %}
+
+<script type="text/javascript">
+
+document.getElementById('player-0-name').innerHTML = {{gameConfig.playerNames[0]|tojson|safe}}
+
+if (myPlayerIndex == 0) {
+	setPlayerLoading(1);
+	document.getElementById('player-1-name').innerHTML = "Waiting for other player..."
+	beforeGameStartLoop();
+}
+
+else if (myPlayerIndex == 1) {
+	setPlayerLoading(0);
+	document.getElementById('player-1-name').innerHTML = {{gameConfig.playerNames[1]|tojson|safe}}
+	waitGameStartLoop();
+}
+
+ + '?v=' + new Date().getTime()
+				
+</script>
+
+{% endblock %}
