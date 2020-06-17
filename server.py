@@ -266,10 +266,8 @@ def new_game_wait():
 	else:
 		return jsonify(validRoom=True, newGame=dictGames[room_name].newGame, orderPlayer=dictGames[room_name].orderPlayer)
 
-
-backgroundCleanup = BackgroundScheduler()
-backgroundCleanup.add_job(func=cleanUp, trigger="interval", hours=1)
-backgroundCleanup.start()
-
 if __name__ == '__main__':
-   app.run(debug = True) 
+	print("BackgroundScheduler started")
+	backgroundCleanup = BackgroundScheduler()
+	backgroundCleanup.add_job(func=cleanUp, trigger="interval", hours=1)
+	backgroundCleanup.start()
