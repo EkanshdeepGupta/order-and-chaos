@@ -1,6 +1,7 @@
 from flask import Flask, render_template, jsonify, request, redirect, url_for
 from apscheduler.schedulers.background import BackgroundScheduler
 import datetime
+from socket import gethostname
 
 app = Flask(__name__)
 
@@ -175,6 +176,8 @@ def role_chosen():
 			
 			dictGames[room_name].setOrderPlayer(player_0_role) # Should basically use the inverse permutation, but happy coincidence that both permutations of [2] are their own inverses.
 
+	return ""
+
 @app.route('/turn_wait', methods = ['POST'])
 def turn_wait():
 	room_name = request.form.get('room_name')
@@ -275,4 +278,5 @@ backgroundCleanup.add_job(func=cleanUp, trigger="interval", hours=1)
 backgroundCleanup.start()
 
 if __name__ == '__main__':
-	pass
+	if 'liveconsole' not in gethostname():
+		app.run(debug=True)

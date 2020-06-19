@@ -2,7 +2,9 @@
 
 <html>
 <title>Order and Chaos</title>
-<head></head>
+<head>
+	 <link rel="icon" href="{{ url_for('static', filename='favicon.ico')}}" type="image/gif" sizes="16x16"> 
+</head>
 
 <style type="text/css">
 body {
@@ -18,6 +20,7 @@ body {
 
 #bottom-message {
 	position: absolute;
+	display: block;
     bottom: 0px;
     right: 0px;
     font-family: Helvetica;
@@ -35,7 +38,7 @@ a {
 }
 
 #how-to-play-box {
-	overflow-y: scroll;
+	overflow-y: auto;
 	height: 60%;
 	width: 60%;
 }
@@ -124,6 +127,12 @@ function closeButton(string) {
 <span id="bottom-message">
 	Made with <span style="color: red;">&#10084;</span> by Ekansh.
 	<a href="mailto:ekanshdeep@cmi.ac.in?subject=Thoughts about Order and Chaos">Reach out!</a>
+	<a href="https://www.github.com/EkanshdeepGupta/order-and-chaos">
+		<img src="{{ url_for('static', filename='GitHub-Mark-120px-plus.png') }}" alt="GitHub repo for this project" style="max-height: 1em;">
+	</a>
+	<a href="https://twitter.com/EkanshdeepGupta">
+		<img src="{{ url_for('static', filename='Twitter_Logo_Blue.png') }}" alt="Ekanshdeep Gupta on Twitter" style="max-height: 1.2em;">
+	</a>
 </span>
 
 </body>
