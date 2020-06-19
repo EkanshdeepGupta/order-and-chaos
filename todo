@@ -1,4 +1,5 @@
-Figure out hosting
+Add links to github and twitter.
+Add surrender button
 
 
 Put a link maybe for joining room, handle said link backend (maybe).
@@ -21,3 +22,4 @@ Add spectate mode (maybe).
 ##Beautfiy error msg on landing page.
 ##Add How to Play.
 ##Add delay between requests -- too many requests.
+##Figure out hosting

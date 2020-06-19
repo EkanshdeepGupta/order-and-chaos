@@ -7,6 +7,9 @@ app = Flask(__name__)
 dictGames={}
 
 def cleanUp():
+	file=open("./cleanLog", 'w')
+	file.write("Clean up started on " + datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
+	file.close()
 	for room_name in dictGames.keys():
 		print(datetime.datetime.now() - dictGames[room_name].lastAccessed)
 		if datetime.datetime.now() - dictGames[room_name].lastAccessed > datetime.timedelta(minutes=15):
@@ -266,8 +269,10 @@ def new_game_wait():
 	else:
 		return jsonify(validRoom=True, newGame=dictGames[room_name].newGame, orderPlayer=dictGames[room_name].orderPlayer)
 
+print("BackgroundScheduler started")
+backgroundCleanup = BackgroundScheduler()
+backgroundCleanup.add_job(func=cleanUp, trigger="interval", hours=1)
+backgroundCleanup.start()
+
 if __name__ == '__main__':
-	print("BackgroundScheduler started")
-	backgroundCleanup = BackgroundScheduler()
-	backgroundCleanup.add_job(func=cleanUp, trigger="interval", hours=1)
-	backgroundCleanup.start()
+	pass
