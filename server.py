@@ -8,6 +8,7 @@ app = Flask(__name__)
 dictGames={}
 
 def cleanUp():
+	print("Clean up began")
 	file=open("./cleanLog", 'w')
 	file.write("Clean up started on " + datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
 	file.close()
@@ -272,10 +273,15 @@ def new_game_wait():
 	else:
 		return jsonify(validRoom=True, newGame=dictGames[room_name].newGame, orderPlayer=dictGames[room_name].orderPlayer)
 
-print("BackgroundScheduler started")
-backgroundCleanup = BackgroundScheduler()
-backgroundCleanup.add_job(func=cleanUp, trigger="interval", hours=1)
-backgroundCleanup.start()
+@app.route('/clean_up', methods = ['GET'])
+def serverCleanUp():
+	cleanUp()
+	return 0
+
+# print("BackgroundScheduler started")
+# backgroundCleanup = BackgroundScheduler()
+# backgroundCleanup.add_job(func=cleanUp, trigger="interval", hours=1)
+# backgroundCleanup.start()
 
 if __name__ == '__main__':
 	if 'liveconsole' not in gethostname():
