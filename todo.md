@@ -1,4 +1,5 @@
 ## Prioritised List of Features
+- [ ] Immplement cleanup of used rooms for PythonAnywhere.
 - [ ] Add surrender button.
 - [ ] Add session continuity.
 - [ ] Handle dropped requests.

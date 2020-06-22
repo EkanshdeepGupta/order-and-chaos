@@ -186,6 +186,10 @@ function beforeGameStartLoop(){ // Loop for when player 0 logs on and is waiting
 				}
 			}
 		}
+
+		else if (this.readyState == 4 && this.status >= 500) {
+			setTimeout(beforeGameStartLoop, 300);
+		}
 	}
 
 	myRequest.send(params);
@@ -224,6 +228,10 @@ function waitGameStartLoop() { // Loop for when player 1 logs on and is waiting 
 				}
 
 			}
+		}
+
+		else if (this.readyState == 4 && this.status >= 500) {
+			setTimeout(waitGameStartLoop, 300);
 		}
 	}
 
@@ -370,10 +378,13 @@ function turnWait() {
 				else {
 					setTimeout(turnWait, 300);
 				}
-			}
-
-			
+			}	
 		}
+
+		else if (this.readyState == 4 && this.status >= 500) {
+			setTimeout(turnWait, 300);
+		}
+
 	}
 
 	myRequest.send(params);
@@ -404,6 +415,10 @@ function newGameWait() {
 				}
 			}
 		}
+
+		else if (this.readyState == 4 && this.status >= 500) {
+			setTimeout(newGameWait, 300);
+		}
 	}
 
 	myRequest.send(params);
@@ -420,7 +435,7 @@ function newGame(playagain) {
 	removeOverlay();
 
 	var myRequest = new XMLHttpRequest();
-	var params = xmlrequestFormData()
+	var params = xmlrequestFormData();
 	params.append('new_game_bool', playagain.toString());
 
 	myRequest.open('POST', '/new_game', true);
@@ -432,12 +447,11 @@ function newGame(playagain) {
 
 				if (myResponseJSON.validRoom) {
 
-					newGameClientCleanUp(myResponseJSON.orderPlayer)
+					newGameClientCleanUp(myResponseJSON.orderPlayer);
 
 				}
 			}
 		}
-		
 	}
 
 	else {
@@ -552,22 +566,24 @@ Room name: {{gameConfig.room_name | safe}}
 
 <script type="text/javascript">
 
-document.getElementById('player-0-name').innerHTML = {{gameConfig.playerNames[0]|tojson|safe}}
+window.onload = function() {
 
-if (myPlayerIndex == 0) {
-	setPlayerLoading(1);
-	document.getElementById('player-1-name').innerHTML = "Waiting for other player..."
-	beforeGameStartLoop();
+	document.getElementById('player-0-name').innerHTML = {{gameConfig.playerNames[0]|tojson|safe}};
+
+	if (myPlayerIndex == 0) {
+
+		setPlayerLoading(1);
+		document.getElementById('player-1-name').innerHTML = "Waiting for other player...";
+		beforeGameStartLoop();
+	}
+
+	else if (myPlayerIndex == 1) {
+		setPlayerLoading(0);
+		document.getElementById('player-1-name').innerHTML = {{gameConfig.playerNames[1]|tojson|safe}};
+		waitGameStartLoop();
+	}
 }
-
-else if (myPlayerIndex == 1) {
-	setPlayerLoading(0);
-	document.getElementById('player-1-name').innerHTML = {{gameConfig.playerNames[1]|tojson|safe}}
-	waitGameStartLoop();
-}
-
- + '?v=' + new Date().getTime()
-				
+			
 </script>
 
 {% endblock %}
