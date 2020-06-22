@@ -8,7 +8,7 @@ app = Flask(__name__)
 dictGames={}
 
 def cleanUp():
-	print("Clean up began")
+	print("Clean up began on " + datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
 	file=open("./cleanLog", 'w')
 	file.write("Clean up started on " + datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
 	file.close()
