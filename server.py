@@ -276,7 +276,7 @@ def new_game_wait():
 @app.route('/clean_up', methods = ['GET'])
 def serverCleanUp():
 	cleanUp()
-	return 0
+	return ""
 
 # print("BackgroundScheduler started")
 # backgroundCleanup = BackgroundScheduler()

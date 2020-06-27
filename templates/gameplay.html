@@ -138,8 +138,8 @@
 
 <script type="text/javascript">
 
-myPlayerIndex = {{ player|tojson|safe }}
-room_name = {{ gameConfig.room_name|tojson|safe }}
+myPlayerIndex = {{ player|tojson|safe }};
+room_name = {{ gameConfig.room_name|tojson|safe }};
 
 function setPlayerLoading(player_index) {
 	document.getElementById('loading-div-' + player_index.toString()).innerHTML = '<img id="loading-gif" height="" src="{{ url_for('static', filename='loading.gif') }}">';
@@ -154,9 +154,9 @@ function removePlayerLoading(player_index) {
 function xmlrequestFormData() {
 	var params = new FormData();
 	params.append('room_name', room_name);
-	params.append('player_index', myPlayerIndex.toString())
+	params.append('player_index', myPlayerIndex.toString());
 
-	return params
+	return params;
 }
 
 function reStyleCells(stylesheet){
@@ -165,7 +165,7 @@ function reStyleCells(stylesheet){
 
 function beforeGameStartLoop(){ // Loop for when player 0 logs on and is waiting for player 1 to log on.
 	var myRequest = new XMLHttpRequest();
-	var params = xmlrequestFormData()
+	var params = xmlrequestFormData();
 
 	myRequest.open('POST', '/pregame', true); 
 
@@ -176,8 +176,8 @@ function beforeGameStartLoop(){ // Loop for when player 0 logs on and is waiting
 			if (myResponseJSON.validRoom && !myResponseJSON.gameStarted) {
 
 				if (myResponseJSON.chooseRole) {
-					document.getElementById('player-1-name').innerHTML = myResponseJSON.player_1_name
-					document.getElementById('score').innerHTML = "Score: 0-0"
+					document.getElementById('player-1-name').innerHTML = myResponseJSON.player_1_name;
+					document.getElementById('score').innerHTML = "Score: 0-0";
 					chooseRolePopUp();
 				}
 
@@ -187,7 +187,7 @@ function beforeGameStartLoop(){ // Loop for when player 0 logs on and is waiting
 			}
 		}
 
-		else if (this.readyState == 4 && this.status >= 500) {
+		else if (this.readyState == 4) {
 			setTimeout(beforeGameStartLoop, 300);
 		}
 	}
@@ -197,7 +197,7 @@ function beforeGameStartLoop(){ // Loop for when player 0 logs on and is waiting
 
 function waitGameStartLoop() { // Loop for when player 1 logs on and is waiting for player 0 to choose starting role.
 	var myRequest = new XMLHttpRequest();
-	var params = xmlrequestFormData()
+	var params = xmlrequestFormData();
 
 	myRequest.open('POST', '/pregame', true); 
 
@@ -207,17 +207,17 @@ function waitGameStartLoop() { // Loop for when player 1 logs on and is waiting 
 
 			if (myResponseJSON.validRoom) {
 				if (myResponseJSON.gameStarted) {
-					document.getElementById('score').innerHTML = "Score: 0-0"
+					document.getElementById('score').innerHTML = "Score: 0-0";
 
 					if (myResponseJSON.orderPlayer == 0) {
-						document.getElementById("player-0-role").innerHTML = 'Order'
-						document.getElementById("player-1-role").innerHTML = 'Chaos'
+						document.getElementById("player-0-role").innerHTML = 'Order';
+						document.getElementById("player-1-role").innerHTML = 'Chaos';
 						turnWait();
 					}
 
 					else if (myResponseJSON.orderPlayer == 1){
-						document.getElementById("player-0-role").innerHTML = 'Chaos'
-						document.getElementById("player-1-role").innerHTML = 'Order'
+						document.getElementById("player-0-role").innerHTML = 'Chaos';
+						document.getElementById("player-1-role").innerHTML = 'Order';
 						removePlayerLoading(0);
 						myTurn();
 					}
@@ -230,7 +230,7 @@ function waitGameStartLoop() { // Loop for when player 1 logs on and is waiting 
 			}
 		}
 
-		else if (this.readyState == 4 && this.status >= 500) {
+		else if (this.readyState == 4) {
 			setTimeout(waitGameStartLoop, 300);
 		}
 	}
@@ -250,22 +250,22 @@ function roleChosen(roleIndex) {
 	removeOverlay()
 
 	var myRequest = new XMLHttpRequest();
-	var params = xmlrequestFormData()
+	var params = xmlrequestFormData();
 	params.append('player_0_role', roleIndex.toString());
 
 	myRequest.open('POST', '/role_chosen', true);
 	myRequest.send(params);
 
 	if (roleIndex == 0) {
-		document.getElementById("player-0-role").innerHTML = 'Order'
-		document.getElementById("player-1-role").innerHTML = 'Chaos'
+		document.getElementById("player-0-role").innerHTML = 'Order';
+		document.getElementById("player-1-role").innerHTML = 'Chaos';
 
 		myTurn();
 	}
 
 	else {
-		document.getElementById("player-0-role").innerHTML = 'Chaos'
-		document.getElementById("player-1-role").innerHTML = 'Order'
+		document.getElementById("player-0-role").innerHTML = 'Chaos';
+		document.getElementById("player-1-role").innerHTML = 'Order';
 
 		setPlayerLoading(1);
 		turnWait();
@@ -280,7 +280,7 @@ function myTurn() {
 }
 
 function redTurn() {
-	$('.game-tile').unbind('click')
+	$('.game-tile').unbind('click');
 	$('.game-tile-0').click(function() {
 		turnPlayed(this, 1);
 	});
@@ -294,7 +294,7 @@ function redTurn() {
 }
 
 function blueTurn() {
-	$('.game-tile').unbind('click')
+	$('.game-tile').unbind('click');
 	$('.game-tile-0').click(function() {
 		turnPlayed(this, 2);
 	});
@@ -310,17 +310,17 @@ function blueTurn() {
 function turnPlayed(elt, color) {
 	$('.button').css("display", "none");
 	$('#' + elt.id).css("background", "");
-	$('.game-tile').unbind('mouseenter mouseleave click')
+	$('.game-tile').unbind('mouseenter mouseleave click');
 	$('.game-tile').css('cursor', 'default');
 	console.log(color)
 	$('#' + elt.id).removeClass('game-tile-0').addClass('game-tile-' + color.toString());
 	reStyleCells("{{ url_for('static',filename='cellStyle.css') }}" + '?v=' + new Date().getTime());
 	
 	var myRequest = new XMLHttpRequest();
-	var params = xmlrequestFormData()
+	var params = xmlrequestFormData();
 
 	params.append('cell', elt.id);
-	params.append('color', color.toString())
+	params.append('color', color.toString());
 
 	myRequest.open('POST', '/turn_played', true);
 
@@ -349,14 +349,14 @@ function turnPlayed(elt, color) {
 function turnWait() {
 	var myRequest = new XMLHttpRequest();
 
-	var params = xmlrequestFormData()
+	var params = xmlrequestFormData();
 
 	myRequest.open('POST', '/turn_wait', true); 
 
 	myRequest.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
 			var myResponseJSON = JSON.parse(this.responseText);
-			var turn = myResponseJSON.turn
+			var turn = myResponseJSON.turn;
 
 			if (myResponseJSON.validRoom) {
 				if (myResponseJSON.gameOver) {
@@ -381,7 +381,7 @@ function turnWait() {
 			}	
 		}
 
-		else if (this.readyState == 4 && this.status >= 500) {
+		else if (this.readyState == 4) {
 			setTimeout(turnWait, 300);
 		}
 
@@ -393,7 +393,7 @@ function turnWait() {
 
 function newGameWait() {
 	var myRequest = new XMLHttpRequest();
-	var params = xmlrequestFormData()
+	var params = xmlrequestFormData();
 
 	myRequest.open('POST', '/new_game_wait', true);
 
@@ -411,12 +411,12 @@ function newGameWait() {
 				}
 
 				else if (myResponseJSON.newGame == -1) {
-					finish()
+					finish();
 				}
 			}
 		}
 
-		else if (this.readyState == 4 && this.status >= 500) {
+		else if (this.readyState == 4) {
 			setTimeout(newGameWait, 300);
 		}
 	}
@@ -470,8 +470,8 @@ function newGameClientCleanUp(orderPlayer) {
 	$('.game-tile-2').removeClass('game-tile-2').addClass('game-tile-0');
 	reStyleCells("{{ url_for('static',filename='cellStyle.css') }}" + '?v=' + new Date().getTime());
 
-	document.getElementById("player-"+ orderPlayer.toString()+ "-role").innerHTML = 'Order'
-	document.getElementById("player-"+ (1-orderPlayer).toString() +"-role").innerHTML = 'Chaos'
+	document.getElementById("player-"+ orderPlayer.toString()+ "-role").innerHTML = 'Order';
+	document.getElementById("player-"+ (1-orderPlayer).toString() +"-role").innerHTML = 'Chaos';
 
 	if (orderPlayer == myPlayerIndex) {
 		myTurn();
