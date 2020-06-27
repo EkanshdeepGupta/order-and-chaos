@@ -43,8 +43,9 @@ class Game:
 		self.playerTurn = playerIndex
 
 	def turn_played(self, pos, color, playerIndex):
-		if playerIndex == self.playerTurn:
-			(i,j) = pos
+		(i,j) = pos
+
+		if playerIndex == self.playerTurn and self.gameState[i][j] == -1:
 			self.gameState[i][j] = color
 			self.turnUpdate = [i,j,color]
 
@@ -86,8 +87,6 @@ class Game:
 				self.winner = 1 - self.orderPlayer
 				self.score[1 - self.orderPlayer] += 1
 
-			
-
 	def checkWin(self, arr):
 		if len(arr) == 5:
 			return (arr == [1] * 5) or (arr == [2] * 5)
@@ -97,8 +96,20 @@ class Game:
 
 		else:
 			print("SHOULD NOT HAPPEN. ALERT ALERT.")
+
 	def returnDict(self):
 		return {key:value for key, value in self.__dict__.items() if not key.startswith('__') and not callable(key)}
+
+	def resetEverything(self):
+		self.gameState = [ [-1 for i in range(6)] for j in range(6)]
+		self.gameOver = False
+		self.orderPlayer = 1 - self.orderPlayer
+		self.lastAccessed = datetime.datetime.now()
+		self.gameStarted = True
+		self.playerTurn = self.orderPlayer
+		self.turnUpdate = False
+		self.winner = -1
+		self.newGame = 1
 
 @app.route('/')
 def index():
@@ -240,17 +251,7 @@ def new_game():
 
 	if playAgain == 'true':
 		if room_name in dictGames.keys():
-		
-			dictGames[room_name].gameState = [ [-1 for i in range(6)] for j in range(6)]
-			dictGames[room_name].gameOver = False
-			dictGames[room_name].orderPlayer = 1 - dictGames[room_name].orderPlayer
-			dictGames[room_name].lastAccessed = datetime.datetime.now()
-
-			dictGames[room_name].gameStarted = True
-			dictGames[room_name].playerTurn = dictGames[room_name].orderPlayer
-			dictGames[room_name].turnUpdate = False
-			dictGames[room_name].winner = -1
-			dictGames[room_name].newGame = 1
+			dictGames[room_name].resetEverything()
 
 			return jsonify(validRoom=True, orderPlayer=dictGames[room_name].orderPlayer)
 
