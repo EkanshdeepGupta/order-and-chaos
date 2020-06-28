@@ -97,6 +97,11 @@ class Game:
 		else:
 			print("SHOULD NOT HAPPEN. ALERT ALERT.")
 
+	def surrender(self, playerIndex):
+		self.gameOver = True
+		self.winner = 1 - playerIndex
+		self.score[1 - playerIndex] += 1
+
 	def returnDict(self):
 		return {key:value for key, value in self.__dict__.items() if not key.startswith('__') and not callable(key)}
 
@@ -168,12 +173,24 @@ def pre_game():
 
 	if room_name in dictGames.keys():
 		dictGames[room_name].lastAccessed = datetime.datetime.now()
+
+		returnParams = {}
+		returnParams['validRoom'] = True
+		returnParams['gameStarted'] = dictGames[room_name].gameStarted
+
 		if playerIndex == 0:
-			return jsonify(validRoom=True, gameStarted=dictGames[room_name].gameStarted, chooseRole=dictGames[room_name].chooseRole, player_1_name=dictGames[room_name].playerNames[1])
+			returnParams['chooseRole'] = dictGames[room_name].chooseRole
+			returnParams['player_1_name'] = dictGames[room_name].playerNames[1]
+			#return jsonify(validRoom=True, gameStarted=dictGames[room_name].gameStarted, chooseRole=dictGames[room_name].chooseRole, player_1_name=dictGames[room_name].playerNames[1])
+
 		elif playerIndex == 1:
-			return jsonify(validRoom=True, gameStarted=dictGames[room_name].gameStarted, orderPlayer=dictGames[room_name].orderPlayer)
+			returnParams['orderPlayer'] = dictGames[room_name].orderPlayer
+			#return jsonify(validRoom=True, gameStarted=dictGames[room_name].gameStarted, orderPlayer=dictGames[room_name].orderPlayer)
+
+		return jsonify(returnParams)
+
 	else:
-		return jsonify(validRoom=False)
+		return jsonify({'validRoom' : False})
 
 @app.route('/role_chosen', methods = ['POST'])
 def role_chosen():
@@ -200,23 +217,30 @@ def turn_wait():
 
 		turn = dictGames[room_name].turnUpdate
 
+		returnParams = {}
+		returnParams['validRoom'] = True
+		returnParams['gameOver'] = dictGames[room_name].gameOver
+
 		if turn and playerIndex != dictGames[room_name].playerTurn:
 			dictGames[room_name].playerTurn = playerIndex
 			dictGames[room_name].turnUpdate = False
 
-			if dictGames[room_name].gameOver:
-				if dictGames[room_name].winner == playerIndex:
-					message = "You have won!"
-				else:
-					message = "You have lost :("
+			returnParams['gameOver'] = dictGames[room_name].gameOver
+			returnParams['turn'] = turn
 
-				return jsonify(validRoom=True, gameOver=dictGames[room_name].gameOver, gameOverMessage=message, turn=turn, score=dictGames[room_name].score)
-
+		if dictGames[room_name].gameOver:
+			if dictGames[room_name].winner == playerIndex:
+				message = "You have won!"
 			else:
-				return jsonify(validRoom=True, gameOver=dictGames[room_name].gameOver, turn=turn)
+				message = "You have lost :("
 
-		else:
-			return jsonify(validRoom=True)
+			returnParams['gameOverMessage'] = message
+			returnParams['score'] = dictGames[room_name].score
+
+		return jsonify(returnParams)
+
+	else:
+		return jsonify({'validRoom' : False})
 
 @app.route('/turn_played', methods = ['POST'])
 def turn_played():
@@ -232,16 +256,23 @@ def turn_played():
 
 		dictGames[room_name].turn_played((i,j), color, playerIndex)
 
+		returnParams = {}
+		returnParams['validRoom'] = True
+		returnParams['gameOver'] = dictGames[room_name].gameOver
+
 		if dictGames[room_name].gameOver:
 			if dictGames[room_name].winner == playerIndex:
 				message = "You have won!"
 			else:
 				message = "You have lost :("
 
-			return jsonify(validRoom=True, gameOver=dictGames[room_name].gameOver, gameOverMessage=message, score=dictGames[room_name].score)
+			returnParams['gameOverMessage'] = message
+			returnParams['score'] = dictGames[room_name].score
 
-		else:
-			return jsonify(validRoom=True, gameOver=dictGames[room_name].gameOver)
+		return jsonify(returnParams)
+
+	else:
+		return jsonify({'validRoom' : False})
 
 @app.route('/new_game', methods = ['POST'])
 def new_game():
@@ -249,17 +280,19 @@ def new_game():
 	playerIndex = int(request.form.get('player_index'))
 	playAgain = request.form.get('new_game_bool')
 
-	if playAgain == 'true':
-		if room_name in dictGames.keys():
+	if room_name in dictGames.keys():
+		if playAgain == 'true':
 			dictGames[room_name].resetEverything()
 
-			return jsonify(validRoom=True, orderPlayer=dictGames[room_name].orderPlayer)
+			return jsonify({'validRoom' : True, 'orderPlayer' : dictGames[room_name].orderPlayer})
 
-		else:
-			return jsonify(validRoom=False)			
+		elif playAgain == 'false':
+			dictGames[room_name].newGame = -1
 
-	elif playAgain == 'false':
-		dictGames[room_name].newGame = -1
+			return ""
+
+	else:
+		return jsonify({'validRoom' : False})
 
 @app.route('/new_game_wait', methods = ['POST'])
 def new_game_wait():
@@ -268,11 +301,42 @@ def new_game_wait():
 	room_name = request.form.get('room_name')
 	playerIndex = int(request.form.get('player_index'))
 
-	if dictGames[room_name].newGame == 1:
-		dictGames[room_name].newGame = 0
-		return jsonify(validRoom=True, newGame=1, orderPlayer=dictGames[room_name].orderPlayer)
+	if room_name in dictGames.keys():
+		returnParams = {}
+		returnParams['validRoom'] = True
+		returnParams['newGame'] = dictGames[room_name].newGame
+		returnParams['orderPlayer'] = dictGames[room_name].orderPlayer
+
+		if dictGames[room_name].newGame == 1:
+			dictGames[room_name].newGame = 0
+		
+		return jsonify(returnParams)
+
 	else:
-		return jsonify(validRoom=True, newGame=dictGames[room_name].newGame, orderPlayer=dictGames[room_name].orderPlayer)
+		return jsonify({'validRoom' : False})
+
+@app.route('/surrender', methods = ['POST'])
+def serverSurrender():
+	room_name = request.form.get('room_name')
+	playerIndex = int(request.form.get('player_index'))
+
+	if room_name in dictGames.keys():
+		dictGames[room_name].lastAccessed = datetime.datetime.now()
+		dictGames[room_name].surrender(playerIndex)
+
+		returnParams = {}
+		returnParams['validRoom'] = True
+		returnParams['gameOver'] = dictGames[room_name].gameOver
+		returnParams['score'] = dictGames[room_name].score
+
+		message = "You have lost :("
+
+		returnParams['gameOverMessage'] = message
+
+		return jsonify(returnParams)
+
+	else:
+		return jsonify({'validRoom' : False})
 
 @app.route('/clean_up', methods = ['GET'])
 def serverCleanUp():

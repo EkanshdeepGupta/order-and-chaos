@@ -1,0 +1,131 @@
+#overlay {
+	position: fixed;
+	top:0px;
+	left:0px;
+	height: 100%;
+	width: 100%;
+	z-index: -1;
+}
+
+.button {
+	display: none;
+	width: 150px;
+	font-size: 2em;
+	margin-top: 2%;
+	padding: 10px;
+}
+
+.hover-box {
+	display: none;
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	right: 0;
+	left:0;
+	margin: auto auto;
+	background: white;
+	border: 1px black solid;
+	height: 150px;
+	padding: 30px 25px;
+	width: 500px;
+	border-radius: 10px;
+}
+
+.hover-inner {
+	border:0px black solid;
+	line-height: 2em;
+	vertical-align: middle;
+}
+
+#player-info {
+	height: 70px;
+	width: 100%;
+	margin-top: 15px;
+}
+
+#playing-area {
+	margin-top: 15px;
+}
+
+.player-individual {
+	display: table-cell;
+	width: 50%;
+	padding-left:10px;
+	padding-right:10px;
+}
+
+.player-individual-table {
+	height: 100%;
+	width: 70%;
+	text-align: center;
+	border: black solid 1px;
+	border-radius: 10px;
+	background: wheat;
+	margin: auto;
+}
+
+.player-loading {
+	width: 10%;
+}
+
+.player-role {
+	width: 20%;
+}
+
+#player-0 {	
+}
+
+#player-1 {
+}
+
+#redButton {
+	margin-left: calc(50% - 200px);
+}
+
+#blueButton {
+	float: right;
+	margin-right: calc(50% - 200px);
+}
+
+#surrenderButton {
+	position: fixed;
+	top: 50%;
+	right: 5%;
+	width: auto;
+}
+
+#order-button-chooser {
+	margin-left: calc(50% - 100px);
+	float: left;
+}
+
+#chaos-button-chooser {
+	margin-right: calc(50% - 100px);
+	float: right;
+}
+
+#playing-board {
+	border-spacing: 0px;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.game-tile {
+	height: 50px;
+	width: 50px;
+	border:1px black solid;
+	border-radius: 2px;
+	background: white;
+}
+
+.game-tile-1 {
+	background: red;
+}
+
+.game-tile-2 {
+	background: blue;
+}
+
+#score {
+	float: right;
+}
