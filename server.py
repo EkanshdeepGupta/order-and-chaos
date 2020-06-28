@@ -9,14 +9,15 @@ dictGames={}
 
 def cleanUp():
 	print("Clean up began on " + datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
-	file=open("./cleanLog", 'w')
-	file.write("Clean up started on " + datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
-	file.close()
+	
 	for room_name in dictGames.keys():
 		print(datetime.datetime.now() - dictGames[room_name].lastAccessed)
 		if datetime.datetime.now() - dictGames[room_name].lastAccessed > datetime.timedelta(minutes=15):
 			print("Cleaning up room " + room_name)
 			dictGames.pop(room_name)
+
+	print("Current Games Keys:")
+	print(dictGames.keys())
 
 class Game:
 	def __init__(self):
@@ -125,12 +126,13 @@ def loadRoom():
 	if request.method == 'GET':
 		return redirect(url_for('index'))
 	if request.method == 'POST':
-		print("Room join/create request")
 
 		req_room_name = request.form.get('room_name') # requested_room_name
 		playerIndex = int(request.form.get('player_index'))
 
 		if playerIndex == 0:
+			print("Room create request: " + str(req_room_name))
+
 			if req_room_name in dictGames.keys():
 				return render_template('index.html', error_message="Room already exists.")
 
@@ -142,12 +144,14 @@ def loadRoom():
 				newGame.lastAccessed = datetime.datetime.now()
 				dictGames[req_room_name] = newGame
 
-				print("Current Games Keys")
+				print("Current Games Keys:")
 				print(dictGames.keys())
 
 				return render_template('gameplay.html', gameConfig=newGame, player=0)
 
 		if playerIndex == 1:
+			print("Room join request: " + str(req_room_name))
+
 			if req_room_name not in dictGames.keys():
 				return render_template('index.html', error_message="Room doesn't exist.")
 
