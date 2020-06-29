@@ -9,6 +9,9 @@ dictGames={}
 
 def cleanUp():
 	print("Clean up began on " + datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
+
+	print("Initial Games Keys:")
+	print(dictGames.keys())
 	
 	for room_name in dictGames.keys():
 		print(datetime.datetime.now() - dictGames[room_name].lastAccessed)
@@ -16,7 +19,7 @@ def cleanUp():
 			print("Cleaning up room " + room_name)
 			dictGames.pop(room_name)
 
-	print("Current Games Keys:")
+	print("Final Games Keys:")
 	print(dictGames.keys())
 
 class Game:
@@ -53,7 +56,7 @@ class Game:
 			self.checkVictory()
 
 		else:
-			print("SOMETHING HAS GONE HORRIBLY WRONG")
+			print("SOMETHING HAS GONE HORRIBLY WRONG: " + str(pos) + ", " + str(playerIndex) + ", " + str(self.playerTurn) + ", " + str(self.gameState[i][j]))
 
 	def checkVictory(self):
 		foundWin = False
@@ -96,7 +99,7 @@ class Game:
 			return (self.checkWin(arr[:-1]) or self.checkWin(arr[1:]))
 
 		else:
-			print("SHOULD NOT HAPPEN. ALERT ALERT.")
+			print("SHOULD NOT HAPPEN. ALERT ALERT: " + str(len(arr)))
 
 	def surrender(self, playerIndex):
 		self.gameOver = True
