@@ -1,124 +1,127 @@
 from flask import Flask, render_template, jsonify, request, redirect, url_for
 from apscheduler.schedulers.background import BackgroundScheduler
 import datetime
+from flask_socketio import SocketIO, join_room, leave_room, send, emit
 from socket import gethostname
 
 app = Flask(__name__)
+socketio = SocketIO(app)
 
 dictGames={}
 
 def cleanUp():
-	print("Clean up began on " + datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
+    print("Clean up began on " + datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
 
-	print("Initial Games Keys:")
-	print(dictGames.keys())
-	
-	for room_name in dictGames.keys():
-		print(datetime.datetime.now() - dictGames[room_name].lastAccessed)
-		if datetime.datetime.now() - dictGames[room_name].lastAccessed > datetime.timedelta(minutes=15):
-			print("Cleaning up room " + room_name)
-			dictGames.pop(room_name)
+    print("Initial Games Keys:")
+    print(dictGames.keys())
+    
+    for room_name in dictGames.keys():
+        print(datetime.datetime.now() - dictGames[room_name].lastAccessed)
+        if datetime.datetime.now() - dictGames[room_name].lastAccessed > datetime.timedelta(minutes=15):
+            print("Cleaning up room " + room_name)
+            dictGames.pop(room_name)
 
-	print("Final Games Keys:")
-	print(dictGames.keys())
+    print("Final Games Keys:")
+    print(dictGames.keys())
 
 class Game:
-	def __init__(self):
-		self.room_name = ""
-		self.gameState = [ [-1 for i in range(6)] for j in range(6)]
-		self.gameOver = False
-		self.playerNames = ["", ""]
-		self.playerLogOnStatus = [False, False]
-		self.orderPlayer = -1
-		self.lastAccessed = ""
-		self.score = [0,0]
+    def __init__(self):
+        self.room_name = ""
+        self.gameState = [ [-1 for i in range(6)] for j in range(6)]
+        self.gameOver = False
+        self.playerNames = ["", ""]
+        self.playerLogOnStatus = [False, False]
+        self.orderPlayer = -1
+        self.lastAccessed = ""
+        self.score = [0,0]
 
-		self.chooseRole = False # Whether to launch pop-up
-		self.gameStarted = False
-		self.playerTurn = -1
-		self.turnUpdate = False
-		self.winner = -1
-		self.newGame = 0 # 0: neutral, 1: restart game, -1: newGame rejected by player.
+        self.chooseRole = False # Whether to launch pop-up
+        self.gameStarted = False
+        self.playerTurn = -1
+        #self.turnUpdate = False
+        self.winner = -1
+        self.newGame = 0 # 0: neutral, 1: restart game, -1: newGame rejected by player.
 
-	def setOrderPlayer(self, playerIndex):
-		self.gameStarted = True
-		self.orderPlayer = playerIndex
-		self.chooseRole = False
-		self.playerTurn = playerIndex
+    def setOrderPlayer(self, playerIndex):
+        self.gameStarted = True
+        self.orderPlayer = playerIndex
+        self.chooseRole = False
+        self.playerTurn = playerIndex
 
-	def turn_played(self, pos, color, playerIndex):
-		(i,j) = pos
+    def turn_played(self, pos, color, playerIndex):
+        (i,j) = pos
 
-		if playerIndex == self.playerTurn and self.gameState[i][j] == -1:
-			self.gameState[i][j] = color
-			self.turnUpdate = [i,j,color]
+        if playerIndex == self.playerTurn and self.gameState[i][j] == -1:
+            self.gameState[i][j] = color
+            self.playerTurn = 1 - self.playerTurn
+            #self.turnUpdate = [i,j,color]
 
-			self.checkVictory()
+            self.checkVictory()
 
-		else:
-			print("SOMETHING HAS GONE HORRIBLY WRONG: " + str(pos) + ", " + str(playerIndex) + ", " + str(self.playerTurn) + ", " + str(self.gameState[i][j]))
+        else:
+            print("SOMETHING HAS GONE HORRIBLY WRONG: " + str(pos) + ", " + str(playerIndex) + ", " + str(self.playerTurn) + ", " + str(self.gameState[i][j]))
 
-	def checkVictory(self):
-		foundWin = False
+    def checkVictory(self):
+        foundWin = False
 
-		for i in range(6):
-			foundWin = foundWin or self.checkWin(self.gameState[i])
-			foundWin = foundWin or self.checkWin([self.gameState[j][i] for j in range(6)])
+        for i in range(6):
+            foundWin = foundWin or self.checkWin(self.gameState[i])
+            foundWin = foundWin or self.checkWin([self.gameState[j][i] for j in range(6)])
 
-		foundWin = foundWin or self.checkWin([self.gameState[i][i] for i in range(6)]) 
-		foundWin = foundWin or self.checkWin([self.gameState[5-i][i] for i in range(6)])
+        foundWin = foundWin or self.checkWin([self.gameState[i][i] for i in range(6)]) 
+        foundWin = foundWin or self.checkWin([self.gameState[5-i][i] for i in range(6)])
 
-		foundWin = foundWin or self.checkWin([self.gameState[i][i+1] for i in range(5)])
-		foundWin = foundWin or self.checkWin([self.gameState[i+1][i] for i in range(5)])
-		foundWin = foundWin or self.checkWin([self.gameState[5-i][i+1] for i in range(5)])
-		foundWin = foundWin or self.checkWin([self.gameState[4-i][i] for i in range(5)])
+        foundWin = foundWin or self.checkWin([self.gameState[i][i+1] for i in range(5)])
+        foundWin = foundWin or self.checkWin([self.gameState[i+1][i] for i in range(5)])
+        foundWin = foundWin or self.checkWin([self.gameState[5-i][i+1] for i in range(5)])
+        foundWin = foundWin or self.checkWin([self.gameState[4-i][i] for i in range(5)])
 
-		if foundWin:
-			self.gameOver = True
-			self.winner = self.orderPlayer
-			self.score[self.orderPlayer] += 1
+        if foundWin:
+            self.gameOver = True
+            self.winner = self.orderPlayer
+            self.score[self.orderPlayer] += 1
 
-		else:
-			checkAllFilled = True
+        else:
+            checkAllFilled = True
 
-			for i in range(6):
-				for j in range(6):
-					if self.gameState[i][j] not in [1, 2]:
-						checkAllFilled = False
+            for i in range(6):
+                for j in range(6):
+                    if self.gameState[i][j] not in [1, 2]:
+                        checkAllFilled = False
 
-			if checkAllFilled:
-				self.gameOver = True
-				self.winner = 1 - self.orderPlayer
-				self.score[1 - self.orderPlayer] += 1
+            if checkAllFilled:
+                self.gameOver = True
+                self.winner = 1 - self.orderPlayer
+                self.score[1 - self.orderPlayer] += 1
 
-	def checkWin(self, arr):
-		if len(arr) == 5:
-			return (arr == [1] * 5) or (arr == [2] * 5)
+    def checkWin(self, arr):
+        if len(arr) == 5:
+            return (arr == [1] * 5) or (arr == [2] * 5)
 
-		elif len(arr) == 6:
-			return (self.checkWin(arr[:-1]) or self.checkWin(arr[1:]))
+        elif len(arr) == 6:
+            return (self.checkWin(arr[:-1]) or self.checkWin(arr[1:]))
 
-		else:
-			print("SHOULD NOT HAPPEN. ALERT ALERT: " + str(len(arr)))
+        else:
+            print("SHOULD NOT HAPPEN. ALERT ALERT: " + str(len(arr)))
 
-	def surrender(self, playerIndex):
-		self.gameOver = True
-		self.winner = 1 - playerIndex
-		self.score[1 - playerIndex] += 1
+    def surrender(self, playerIndex):
+        self.gameOver = True
+        self.winner = 1 - playerIndex
+        self.score[1 - playerIndex] += 1
 
-	def returnDict(self):
-		return {key:value for key, value in self.__dict__.items() if not key.startswith('__') and not callable(key)}
+    def returnDict(self):
+        return {key:value for key, value in self.__dict__.items() if not key.startswith('__') and not callable(key)}
 
-	def resetEverything(self):
-		self.gameState = [ [-1 for i in range(6)] for j in range(6)]
-		self.gameOver = False
-		self.orderPlayer = 1 - self.orderPlayer
-		self.lastAccessed = datetime.datetime.now()
-		self.gameStarted = True
-		self.playerTurn = self.orderPlayer
-		self.turnUpdate = False
-		self.winner = -1
-		self.newGame = 1
+    def resetEverything(self):
+        self.gameState = [ [-1 for i in range(6)] for j in range(6)]
+        self.gameOver = False
+        self.orderPlayer = 1 - self.orderPlayer
+        self.lastAccessed = datetime.datetime.now()
+        self.gameStarted = True
+        self.playerTurn = self.orderPlayer
+        #self.turnUpdate = False
+        self.winner = -1
+        self.newGame = 1
 
 @app.route('/')
 def index():
@@ -126,229 +129,130 @@ def index():
 
 @app.route('/play', methods = ['POST', 'GET'])
 def loadRoom():
-	if request.method == 'GET':
-		return redirect(url_for('index'))
-	if request.method == 'POST':
+    if request.method == 'GET':
+        return redirect(url_for('index'))
 
-		req_room_name = request.form.get('room_name') # requested_room_name
-		playerIndex = int(request.form.get('player_index'))
+    if request.method == 'POST':
 
-		if playerIndex == 0:
-			print("Room create request: " + str(req_room_name))
+        req_room_name = request.form.get('room_name') # requested_room_name
+        #send(username + ' has entered the room.', room=room)
 
-			if req_room_name in dictGames.keys():
-				return render_template('index.html', error_message="Room already exists.")
+        playerIndex = int(request.form.get('player_index'))
 
-			else:
-				newGame = Game()
-				newGame.playerNames[0] = request.form.get('player_name')
-				newGame.playerLogOnStatus[0] = True
-				newGame.room_name = req_room_name
-				newGame.lastAccessed = datetime.datetime.now()
-				dictGames[req_room_name] = newGame
+        if playerIndex == 0:
+            print("Room create request: " + str(req_room_name))
 
-				print("Current Games Keys:")
-				print(dictGames.keys())
+            if req_room_name in dictGames.keys():
+                return render_template('index.html', error_message="Room already exists.")
 
-				return render_template('gameplay.html', gameConfig=newGame, player=0)
+            else:
+                newGame = Game()
+                newGame.playerNames[0] = request.form.get('player_name')
+                newGame.playerLogOnStatus[0] = True
+                newGame.room_name = req_room_name
+                newGame.lastAccessed = datetime.datetime.now()
+                dictGames[req_room_name] = newGame
 
-		if playerIndex == 1:
-			print("Room join request: " + str(req_room_name))
+                print("Current Games Keys:")
+                print(dictGames.keys())
 
-			if req_room_name not in dictGames.keys():
-				return render_template('index.html', error_message="Room doesn't exist.")
+                return render_template('gameplay.html', gameConfig=newGame, player=0)
 
-			else:
-				if dictGames[req_room_name].playerLogOnStatus[1] == False:
-					dictGames[req_room_name].playerNames[1] = request.form.get('player_name')
-					dictGames[req_room_name].playerLogOnStatus[1] = True
-					dictGames[req_room_name].lastAccessed = datetime.datetime.now()
-					dictGames[req_room_name].chooseRole = True
+        if playerIndex == 1:
+            print("Room join request: " + str(req_room_name))
 
-					return render_template('gameplay.html', gameConfig=dictGames[req_room_name], player=1)
+            if req_room_name not in dictGames.keys():
+                return render_template('index.html', error_message="Room doesn't exist.")
 
-				else:
-					return render_template('index.html', error_message="Room full.")
+            else:
+                if dictGames[req_room_name].playerLogOnStatus[1] == False:
+                    dictGames[req_room_name].playerNames[1] = request.form.get('player_name')
+                    dictGames[req_room_name].playerLogOnStatus[1] = True
+                    dictGames[req_room_name].lastAccessed = datetime.datetime.now()
+                    dictGames[req_room_name].chooseRole = True
 
-	else:
-		return render_template('gameplay.html')
+                    return render_template('gameplay.html', gameConfig=dictGames[req_room_name], player=1)
 
-@app.route('/pregame', methods = ['POST'])
-def pre_game():
-	room_name = request.form.get('room_name')
-	playerIndex = int(request.form.get('player_index'))
+                else:
+                    return render_template('index.html', error_message="Room full.")
 
-	if room_name in dictGames.keys():
-		dictGames[room_name].lastAccessed = datetime.datetime.now()
+    else:
+        return render_template('gameplay.html')
 
-		returnParams = {}
-		returnParams['validRoom'] = True
-		returnParams['gameStarted'] = dictGames[room_name].gameStarted
+@socketio.on('connect')
+def test_connect():
+    pass
 
-		if playerIndex == 0:
-			returnParams['chooseRole'] = dictGames[room_name].chooseRole
-			returnParams['player_1_name'] = dictGames[room_name].playerNames[1]
-			#return jsonify(validRoom=True, gameStarted=dictGames[room_name].gameStarted, chooseRole=dictGames[room_name].chooseRole, player_1_name=dictGames[room_name].playerNames[1])
+@socketio.on('room')
+def room_join(data):
+    join_room(data['room'])
 
-		elif playerIndex == 1:
-			returnParams['orderPlayer'] = dictGames[room_name].orderPlayer
-			#return jsonify(validRoom=True, gameStarted=dictGames[room_name].gameStarted, orderPlayer=dictGames[room_name].orderPlayer)
+    if data['playerIndex'] == 1:
+        emit('user_joined', dictGames[data['room']].playerNames, room=data['room'])
 
-		return jsonify(returnParams)
+@socketio.on('role_chosen')
+def role_chosen(data):
+    dictGames[data['room']].setOrderPlayer(data['playerIndex'] ^ data['roleChosen'])  # it works. order -> 0, chaos -> 1. ^ is bitwise xor.
+    emit('role_chosen', dictGames[data['room']].orderPlayer, room=data['room'])
 
-	else:
-		return jsonify({'validRoom' : False})
+@socketio.on('turn_played')
+def turn_played(data):
+    room_name = data['room']
+    playerIndex = int(data['playerIndex'])
+    cell = data['cell']
+    color = int(data['color'])
 
-@app.route('/role_chosen', methods = ['POST'])
-def role_chosen():
-	room_name = request.form.get('room_name')
-	playerIndex = int(request.form.get('player_index'))
+    if room_name in dictGames.keys():
+        dictGames[room_name].lastAccessed = datetime.datetime.now()
+        (i,j) = (int(cell[5]), int(cell[7])) # passing cell-id. By the naming convention, their co-ordinates are stored as the 5th and 7th char in string.
 
-	if room_name in dictGames.keys():
-		dictGames[room_name].lastAccessed = datetime.datetime.now()
+        dictGames[room_name].turn_played((i,j), color, playerIndex)
 
-		if playerIndex == 0:
-			player_0_role = int(request.form.get('player_0_role'))
-			
-			dictGames[room_name].setOrderPlayer(player_0_role) # Should basically use the inverse permutation, but happy coincidence that both permutations of [2] are their own inverses.
+        returnParams = {}
+        returnParams['cell'] = cell
+        returnParams['color'] = color
+        returnParams['gameOver'] = dictGames[room_name].gameOver
 
-	return ""
+        if not dictGames[room_name].gameOver:
+            returnParams['playerTurn'] = dictGames[room_name].playerTurn         
 
-@app.route('/turn_wait', methods = ['POST'])
-def turn_wait():
-	room_name = request.form.get('room_name')
-	playerIndex = int(request.form.get('player_index'))
+        emit('turn_played', returnParams, room=data['room'])
 
-	if room_name in dictGames.keys():
-		dictGames[room_name].lastAccessed = datetime.datetime.now()
+        if dictGames[room_name].gameOver: # Repeated clause because want to emit turn_played before game_over, but only want to include playerTurn if not gameOver.
+            emit('game_over', {'winner': dictGames[room_name].winner, 'score': dictGames[room_name].score}, room=data['room'])
 
-		turn = dictGames[room_name].turnUpdate
+@socketio.on('play_again')
+def play_again(data):
+    room_name = data['room']
+    playerIndex = int(data['playerIndex'])
+    playAgain = data['newGameBool']
 
-		returnParams = {}
-		returnParams['validRoom'] = True
-		returnParams['gameOver'] = dictGames[room_name].gameOver
+    print(type(playAgain))
+    print(playAgain)
 
-		if turn and playerIndex != dictGames[room_name].playerTurn:
-			dictGames[room_name].playerTurn = playerIndex
-			dictGames[room_name].turnUpdate = False
+    if room_name in dictGames.keys():
+        if playAgain:
+            dictGames[room_name].resetEverything()
 
-			returnParams['gameOver'] = dictGames[room_name].gameOver
-			returnParams['turn'] = turn
+            emit('play_again', dictGames[data['room']].orderPlayer, room=data['room'])
 
-		if dictGames[room_name].gameOver:
-			if dictGames[room_name].winner == playerIndex:
-				message = "You have won!"
-			else:
-				message = "You have lost :("
+        else:
+            dictGames[room_name].newGame = -1
 
-			returnParams['gameOverMessage'] = message
-			returnParams['score'] = dictGames[room_name].score
+@socketio.on('surrender')
+def surrender(data):
+    room_name = data['room']
+    playerIndex = int(data['playerIndex'])
 
-		return jsonify(returnParams)
+    if room_name in dictGames.keys():
+        dictGames[room_name].lastAccessed = datetime.datetime.now()
+        dictGames[room_name].surrender(playerIndex)
 
-	else:
-		return jsonify({'validRoom' : False})
-
-@app.route('/turn_played', methods = ['POST'])
-def turn_played():
-	room_name = request.form.get('room_name')
-	playerIndex = int(request.form.get('player_index'))
-
-	cell = request.form.get('cell')
-	color = int(request.form.get('color'))
-
-	if room_name in dictGames.keys():
-		dictGames[room_name].lastAccessed = datetime.datetime.now()
-		(i,j) = (int(cell[5]), int(cell[7]))
-
-		dictGames[room_name].turn_played((i,j), color, playerIndex)
-
-		returnParams = {}
-		returnParams['validRoom'] = True
-		returnParams['gameOver'] = dictGames[room_name].gameOver
-
-		if dictGames[room_name].gameOver:
-			if dictGames[room_name].winner == playerIndex:
-				message = "You have won!"
-			else:
-				message = "You have lost :("
-
-			returnParams['gameOverMessage'] = message
-			returnParams['score'] = dictGames[room_name].score
-
-		return jsonify(returnParams)
-
-	else:
-		return jsonify({'validRoom' : False})
-
-@app.route('/new_game', methods = ['POST'])
-def new_game():
-	room_name = request.form.get('room_name')
-	playerIndex = int(request.form.get('player_index'))
-	playAgain = request.form.get('new_game_bool')
-
-	if room_name in dictGames.keys():
-		if playAgain == 'true':
-			dictGames[room_name].resetEverything()
-
-			return jsonify({'validRoom' : True, 'orderPlayer' : dictGames[room_name].orderPlayer})
-
-		elif playAgain == 'false':
-			dictGames[room_name].newGame = -1
-
-			return ""
-
-	else:
-		return jsonify({'validRoom' : False})
-
-@app.route('/new_game_wait', methods = ['POST'])
-def new_game_wait():
-	#validRoom, newGame, orderPlayer
-
-	room_name = request.form.get('room_name')
-	playerIndex = int(request.form.get('player_index'))
-
-	if room_name in dictGames.keys():
-		returnParams = {}
-		returnParams['validRoom'] = True
-		returnParams['newGame'] = dictGames[room_name].newGame
-		returnParams['orderPlayer'] = dictGames[room_name].orderPlayer
-
-		if dictGames[room_name].newGame == 1:
-			dictGames[room_name].newGame = 0
-		
-		return jsonify(returnParams)
-
-	else:
-		return jsonify({'validRoom' : False})
-
-@app.route('/surrender', methods = ['POST'])
-def serverSurrender():
-	room_name = request.form.get('room_name')
-	playerIndex = int(request.form.get('player_index'))
-
-	if room_name in dictGames.keys():
-		dictGames[room_name].lastAccessed = datetime.datetime.now()
-		dictGames[room_name].surrender(playerIndex)
-
-		returnParams = {}
-		returnParams['validRoom'] = True
-		returnParams['gameOver'] = dictGames[room_name].gameOver
-		returnParams['score'] = dictGames[room_name].score
-
-		message = "You have lost :("
-
-		returnParams['gameOverMessage'] = message
-
-		return jsonify(returnParams)
-
-	else:
-		return jsonify({'validRoom' : False})
+        emit('game_over', {'winner': dictGames[room_name].winner, 'score': dictGames[room_name].score}, room=data['room'])
 
 @app.route('/clean_up', methods = ['GET'])
 def serverCleanUp():
-	cleanUp()
-	return ""
+    cleanUp()
 
 # print("BackgroundScheduler started")
 # backgroundCleanup = BackgroundScheduler()
@@ -356,5 +260,5 @@ def serverCleanUp():
 # backgroundCleanup.start()
 
 if __name__ == '__main__':
-	if 'liveconsole' not in gethostname():
-		app.run(debug=True)
+    if 'liveconsole' not in gethostname():
+        socketio.run(app)
