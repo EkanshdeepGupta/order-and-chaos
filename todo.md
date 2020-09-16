@@ -1,16 +1,18 @@
 ## Prioritised List of Features
-- [ ] Immplement cleanup of used rooms for PythonAnywhere.
-- [ ] Add surrender button.
+- [ ] Add chatbox.
+- [ ] Get a good layout.
+- [ ] Host on heroku.
 - [ ] Add session continuity.
-- [ ] Handle dropped requests.
-- [ ] Check if other players goes offline.
+- [ ] Put a link maybe for joining room.
 
 ## Potential Future Features
-- [ ] Put a link maybe for joining room, handle said link backend (maybe).
+
 - [ ] Add spectate mode (maybe).
 
 
 ## Implemented Features
+- [x] Implement cleanup of used rooms for PythonAnywhere.
+- [x] Add surrender button.
 - [x] Make the Red/Blue buttons fit on the page. 
 - [x] Check if room occupied before joining.
 - [x] Add order/chaos marker for each player.
