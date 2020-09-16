@@ -1,1 +1,1 @@
-web: python server.py
+web: gunicorn -k gevent -w 1 server:app
