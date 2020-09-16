@@ -1,5 +1,6 @@
 from flask import Flask, render_template, jsonify, request, redirect, url_for
 import datetime
+import os
 from flask_socketio import SocketIO, join_room, leave_room, send, emit
 
 app = Flask(__name__)
@@ -267,4 +268,7 @@ def serverCleanUp():
 # backgroundCleanup.start()
 
 if __name__ == '__main__':
-    socketio.run(app)
+    # Bind to PORT if defined, otherwise default to 5000.
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', )
+    socketio.run(app, port=port)
