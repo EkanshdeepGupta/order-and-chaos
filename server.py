@@ -1,8 +1,6 @@
 from flask import Flask, render_template, jsonify, request, redirect, url_for
-from apscheduler.schedulers.background import BackgroundScheduler
 import datetime
 from flask_socketio import SocketIO, join_room, leave_room, send, emit
-from socket import gethostname
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -269,5 +267,4 @@ def serverCleanUp():
 # backgroundCleanup.start()
 
 if __name__ == '__main__':
-    if 'liveconsole' not in gethostname():
-        socketio.run(app, debug=True)
+    socketio.run(app)
