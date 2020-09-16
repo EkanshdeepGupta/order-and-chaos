@@ -7,6 +7,7 @@ function jsonData() { // Returns identifying state info
 $(document).ready(function(){
 
     var protocol = window.location.protocol;
+    console.log(protocol);
     socket = io(protocol + '//' + document.domain + ':' + location.port); //'http://' + document.domain + ':' + location.port
     socket.on('connect', function() {
         socket.emit('room', jsonData());
