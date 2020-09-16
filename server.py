@@ -2,6 +2,9 @@ from flask import Flask, render_template, jsonify, request, redirect, url_for
 import datetime
 import os
 from flask_socketio import SocketIO, join_room, leave_room, send, emit
+import eventlet
+
+eventlet.monkey_patch()
 
 app = Flask(__name__)
 socketio = SocketIO(app)
