@@ -56,6 +56,13 @@ $(document).ready(function(){
 
     });
 
+    socket.on('send_message', function(data) {
+        var text = data['text'];
+        var chatBox = document.getElementById("chat")
+        chatBox.innerHTML += text + "<br/>"; // Server sends pre-processed text.
+        chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
     document.getElementById('player-0-name').innerHTML = player_0_name;
 
     if (myPlayerIndex == 0) {
@@ -68,6 +75,26 @@ $(document).ready(function(){
         document.getElementById('player-1-name').innerHTML = player_1_name;
         //waitGameStartLoop();
     }
+
+
+    document.getElementById("send-button").onclick = function() {
+        var text = document.getElementById("textfield-input").value;
+
+        data = jsonData();
+        data.text = text;
+
+        socket.emit('send_message', data);
+
+        // Set the textfield input to empty
+        document.getElementById("textfield-input").value = "";
+    }
+
+    document.getElementById("textfield-input").addEventListener("keyup", function(event) {
+    event.preventDefault();
+    if (event.keyCode === 13) {
+        document.getElementById("send-button").click();
+    }
+});
 });
 
 function setPlayerLoading(player_index) {

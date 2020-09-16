@@ -250,6 +250,15 @@ def surrender(data):
 
         emit('game_over', {'winner': dictGames[room_name].winner, 'score': dictGames[room_name].score}, room=data['room'])
 
+@socketio.on('send_message')
+def send_message(data):
+    room_name = data['room']
+    playerIndex = int(data['playerIndex'])
+
+    if room_name in dictGames.keys():
+        messageString = "<b>" + dictGames[room_name].playerNames[playerIndex] + ": </b> " + data['text']
+        emit('send_message', {'text': messageString}, room=data['room'])
+
 @app.route('/clean_up', methods = ['GET'])
 def serverCleanUp():
     cleanUp()
@@ -261,4 +270,4 @@ def serverCleanUp():
 
 if __name__ == '__main__':
     if 'liveconsole' not in gethostname():
-        socketio.run(app)
+        socketio.run(app, debug=True)
