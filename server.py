@@ -1,8 +1,10 @@
 from flask import Flask, render_template, jsonify, request, redirect, url_for
-from apscheduler.schedulers.background import BackgroundScheduler
 import datetime
+import os
 from flask_socketio import SocketIO, join_room, leave_room, send, emit
-from socket import gethostname
+import eventlet
+
+eventlet.monkey_patch()
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -250,6 +252,15 @@ def surrender(data):
 
         emit('game_over', {'winner': dictGames[room_name].winner, 'score': dictGames[room_name].score}, room=data['room'])
 
+@socketio.on('send_message')
+def send_message(data):
+    room_name = data['room']
+    playerIndex = int(data['playerIndex'])
+
+    if room_name in dictGames.keys():
+        messageString = "<b>" + dictGames[room_name].playerNames[playerIndex] + ": </b> " + data['text']
+        emit('send_message', {'text': messageString}, room=data['room'])
+
 @app.route('/clean_up', methods = ['GET'])
 def serverCleanUp():
     cleanUp()
@@ -260,5 +271,6 @@ def serverCleanUp():
 # backgroundCleanup.start()
 
 if __name__ == '__main__':
-    if 'liveconsole' not in gethostname():
-        socketio.run(app)
+    # Bind to PORT if defined, otherwise default to 5000.
+    port = int(os.environ.get('PORT', 5000))
+    socketio.run(app, port=port)

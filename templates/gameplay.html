@@ -73,6 +73,14 @@ Room name: {{gameConfig.room_name | safe}}
 </tbody>
 </table>
 <div id="playing-area">
+<div id="chat-area">
+<div id="chat"></div>                 
+<div id="send-msg-panel">
+    <input type="text" id="textfield-input"  class="textfield"> 
+    <button id="send-button" class="is-primary">Send</button>
+</div>
+</div>
+
 <button class="button" id="surrenderButton" onclick="surrender()">Surrender</button>
 <table id="playing-board">
 <tbody>
