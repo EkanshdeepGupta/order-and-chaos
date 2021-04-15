@@ -1,16 +1,20 @@
 # Order And Chaos
-My 2-player webgame implementation of Order and Chaos
+My 2-player webgame implementation of the game Order and Chaos. I found out about the game from Tom Scott (https://youtu.be/qsjVfJur1ac)
+
+Play at: play-order-chaos.herokuapp.com
 
 # To Do:
+
 ## Prioritised List of Features
-- [ ] Add chatbox.
 - [ ] Get a good layout.
-- [ ] Host on heroku.
 - [ ] Add session continuity.
 - [ ] Put a link maybe for joining room.
 - [ ] Add spectate mode (maybe).
 
 ## Implemented Features
+
+- [x] Add chatbox.
+- [x] Host on heroku.
 - [x] Do a proper sockets-io integration.
 - [x] Implement cleanup of used rooms for PythonAnywhere.
 - [x] Add surrender button.
