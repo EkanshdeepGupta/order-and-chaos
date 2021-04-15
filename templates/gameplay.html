@@ -46,7 +46,7 @@ Room name: {{gameConfig.room_name | safe}}
 		<table id="player-0-table" class="player-individual-table">
 		<tr>
 			<td id="player-0-loading" class="player-loading">
-				<span id="loading-div-0" class="loading-div"></span>
+				<div id="loading-div-0" class="loading-div"></span>
 			</td>
 			<td id="player-0-name" class="player-name">	
 			</td>
@@ -60,7 +60,7 @@ Room name: {{gameConfig.room_name | safe}}
 		<table id="player-1-table" class="player-individual-table">
 		<tr>
 			<td id="player-1-loading" class="player-loading">
-				<span id="loading-div-1" class="loading-div"></span>
+				<div id="loading-div-1" class="loading-div"></span>
 			</td>
 			<td id="player-1-name" class="player-name">
 			</td>
@@ -114,28 +114,5 @@ Room name: {{gameConfig.room_name | safe}}
 
 
 {% block postscripts %}
-
-<script>
-
-/*window.onload = function() { 
-
-
-	document.getElementById('player-0-name').innerHTML = {{gameConfig.playerNames[0]|tojson|safe}};
-
-	if (myPlayerIndex == 0) {
-
-		setPlayerLoading(1);
-		document.getElementById('player-1-name').innerHTML = "Waiting for other player...";
-		beforeGameStartLoop();
-	}
-
-	else if (myPlayerIndex == 1) {
-		setPlayerLoading(0);
-		document.getElementById('player-1-name').innerHTML = {{gameConfig.playerNames[1]|tojson|safe}};
-		waitGameStartLoop();
-	}
-}*/
-			
-</script>
 
 {% endblock %}

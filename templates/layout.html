@@ -4,7 +4,11 @@
 <title>Order and Chaos</title>
 <head>
 	<link rel="icon" href="{{ url_for('static', filename='favicon.ico')}}" type="image/gif" sizes="16x16"> 
-    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css"> -->
+
+    <!-- <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.2/css/bulma.min.css"> -->
+    <link rel="stylesheet" href="https://unpkg.com/purecss@2.0.5/build/pure-min.css" integrity="sha384-G9DpmGxRIF6tpgbrkZVcZDeIomEU22LgTguPAI739bbKytjPE/kHTK5YxjJAAEXC" crossorigin="anonymous">
 </head>
 
 <style type="text/css">
@@ -45,6 +49,11 @@ a {
 }
 
 .closeButton {
+	content: 'x'; // here is your X(cross) sign.
+	color: #fff;
+	font-weight: 300;
+	font-family: Arial, sans-serif;
+
 	font-size: 1.4em;
 	display:table-cell;
 	position: absolute;
@@ -60,7 +69,7 @@ a {
 
 .closeButton:hover {
 	cursor: pointer;
-	background: red;
+	background: Tomato;
 	color: white;
 	border: 1px white solid;
 	border-top-right-radius: 10px;
@@ -113,12 +122,14 @@ function closeButton(string) {
 	{% block content %}{% endblock %}
 
 	<div id="how-to-play-box" class="hover-box" >
-	<div class="closeButton" onclick="closeButton('how-to-play-box')">&#10006</div>
+	<div class="closeButton" onclick="closeButton('how-to-play-box')">X</div>
 		<div id="play-box-inner" class="hover-inner">
 			<p class="how-to-play-header">Rules of Order and Chaos:</p>
 			The game is played by two players on a 6x6 grid. One player assumes the rule of 'Order' and the other player is 'Chaos'. Each player takes turns to put a red or a blue token on any unoccupied square of the grid. The 'Order' player goes first and his job is to try and get 5 tokens of the same color in a row (diagonals also count). The 'Chaos' player wants to prevent this from happening.
 
 			The twist is that both players can play both colors, so it is more complicated than a traditional 'tic-tac-toe'.
+
+			I first saw this game on Tom Scott's video: https://youtu.be/qsjVfJur1ac
 
 			<p class="how-to-play-header">How to play:</p>
 			One player creates a room. The other player can join the room by simply entering the same room name. The first player gets to choose the roles, and 'Order' plays first. When the game ends, if the players to play another game, the roles reverse and the game starts over. You can check out the score on the top right!

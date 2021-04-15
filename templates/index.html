@@ -18,6 +18,7 @@
 	font-size: 2em;
 	margin-top: 10%;
 	padding: 10px;
+    height: 3em;
 }
 
 #joinButton {
@@ -110,22 +111,22 @@ function validateForm(form) {
 <button class="button" id="createButton" onclick="createGame()">Create</button>
 
 <div id="join" class="hover-box">
-	<div class="closeButton" onclick="closeButton('join')">&#10006</div>
+	<div class="closeButton" onclick="closeButton('join')">x</div>
 		<div id="joinInner" class="hover-inner">
 			<form id="joinForm" action="/play" onsubmit="return validateForm(this)" method="post">
 				<label>Enter Room Code: </label></br><input id="join-room-name" type="text" name="room_name"> </br>
 				<label>Enter Name: </label></br><input type="text" name="player_name"> </br>
-				<input type="submit" value="Go">
+				<input style="margin-top: 10px;" type="submit" value="Go">
 			</form>
 		</div>
 	</div>
 </div>
 
 <div id="create" class="hover-box" >
-	<div class="closeButton" onclick="closeButton('create')">&#10006</div>
+	<div class="closeButton" onclick="closeButton('create')">x</div>
 		<div id="createInner" class="hover-inner">
 			<form id="createForm" action="/play" onsubmit="return validateForm(this)" method="post">
-				<label>Enter New Room Code: </label></br><input id="create-room-name" type="text" name="room_name" id="room"> </br>
+				<label>Enter New Room Code: </label></br><input id="create-room-name" type="text" name="room_name"> </br>
 				<label>Enter Name: </label></br><input type="text" name="player_name" id="player"> </br>
 				<input style="margin-top: 10px;" type="submit" value="Go">
 			</form>

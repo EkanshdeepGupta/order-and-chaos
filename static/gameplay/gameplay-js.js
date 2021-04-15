@@ -34,11 +34,18 @@ $(document).ready(function(){
         $('#' + gameState.cell).removeClass('game-tile-0').addClass('game-tile-' + gameState.color.toString());
         reStyleCells(cellStyle_url + '?v=' + new Date().getTime()); // Reload the cell style-sheet. getTime() hack to prevent caching.
 
-        removePlayerLoading(1 - myPlayerIndex); // will be executed pointlessly when the player who just played receives this event, but no harm.
+        removePlayerLoading(1 - gameState.playerTurn); // will be executed pointlessly when the player who just played receives this event, but no harm.
 
-        if (!gameState.gameOver && gameState.playerTurn == myPlayerIndex) { // If gameOver happens, then gameState won't have an object called playerTurn.
+        if (!gameState.gameOver) {
+            if (gameState.playerTurn == myPlayerIndex) { // If gameOver happens, then gameState won't have an object called playerTurn.
             myTurn();
-        }
+            removePlayerLoading(1 - gameState.playerTurn); // Perhaps redundant
+            }
+
+            else {
+                setPlayerLoading(gameState.playerTurn);
+            }
+        } 
     });
 
     socket.on('play_again', function(orderPlayer) {
@@ -100,13 +107,15 @@ $(document).ready(function(){
 });
 
 function setPlayerLoading(player_index) {
-    document.getElementById('loading-div-' + player_index.toString()).innerHTML = '<img id="loading-gif" height="" src="' + loading_gif_url + '">';
+    // document.getElementById('loading-div-' + player_index.toString()).innerHTML = '<img id="loading-gif" height="" src="' + loading_gif_url + '">';
 
-    $("#loading-gif").css('height', '30px');
+    // $("#loading-gif").css('height', '30px');
+    document.getElementById('player-' + player_index.toString() + '-loading').style.visibility = 'visible'
 }
 
 function removePlayerLoading(player_index) {
-    document.getElementById('loading-div-' + player_index.toString()).innerHTML = '';
+    // document.getElementById('loading-div-' + player_index.toString()).innerHTML = '';
+    document.getElementById('player-' + player_index.toString() + '-loading').style.visibility = 'hidden';
 }
 
 function reStyleCells(stylesheet){
@@ -172,6 +181,8 @@ function turnPlayed(elt, color) {
     $('.game-tile').css('cursor', 'default');
     $('#' + elt.id).removeClass('game-tile-0').addClass('game-tile-' + color.toString());
     reStyleCells(cellStyle_url + '?v=' + new Date().getTime());
+
+    setPlayerLoading(1 - myPlayerIndex);
     
     data = jsonData();
     data.cell = elt.id;
@@ -213,7 +224,6 @@ function newGameClientCleanUp(orderPlayer) {
     }
 
     else {
-        setPlayerLoading(1 - myPlayerIndex);
         turnWait();
     }
 }

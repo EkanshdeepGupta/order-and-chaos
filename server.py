@@ -11,21 +11,6 @@ socketio = SocketIO(app)
 
 dictGames={}
 
-def cleanUp():
-    print("Clean up began on " + datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
-
-    print("Initial Games Keys:")
-    print(dictGames.keys())
-    
-    for room_name in dictGames.keys():
-        print(datetime.datetime.now() - dictGames[room_name].lastAccessed)
-        if datetime.datetime.now() - dictGames[room_name].lastAccessed > datetime.timedelta(minutes=15):
-            print("Cleaning up room " + room_name)
-            dictGames.pop(room_name)
-
-    print("Final Games Keys:")
-    print(dictGames.keys())
-
 class Game:
     def __init__(self):
         self.room_name = ""
@@ -50,8 +35,22 @@ class Game:
         self.chooseRole = False
         self.playerTurn = playerIndex
 
+    def createGame(self, player_name, room_name):
+        self.room_name = room_name
+        self.playerNames[0] = player_name
+        self.playerLogOnStatus[0] = True
+        self.lastAccessed = datetime.datetime.now()
+
+    def joinGame(self, player_name):
+        self.playerNames[1] = player_name
+        self.playerLogOnStatus[1] = True
+        self.lastAccessed = datetime.datetime.now()
+        self.chooseRole = True
+
     def turn_played(self, pos, color, playerIndex):
         (i,j) = pos
+
+        self.lastAccessed = datetime.datetime.now()
 
         if playerIndex == self.playerTurn and self.gameState[i][j] == -1:
             self.gameState[i][j] = color
@@ -107,6 +106,7 @@ class Game:
             print("SHOULD NOT HAPPEN. ALERT ALERT: " + str(len(arr)))
 
     def surrender(self, playerIndex):
+        self.lastAccessed = datetime.datetime.now()
         self.gameOver = True
         self.winner = 1 - playerIndex
         self.score[1 - playerIndex] += 1
@@ -132,7 +132,13 @@ def index():
 @app.route('/play', methods = ['POST', 'GET'])
 def loadRoom():
     if request.method == 'GET':
-        return redirect(url_for('index'))
+        req_room_name = request.args.get("room")
+
+        if req_room_name == None:
+            return render_template('index.html', error_message="Unknown request.")
+
+        # else:
+            # Have to implement an input feature that takes just player name. 
 
     if request.method == 'POST':
 
@@ -144,15 +150,13 @@ def loadRoom():
         if playerIndex == 0:
             print("Room create request: " + str(req_room_name))
 
-            if req_room_name in dictGames.keys():
+            if req_room_name in dictGames.keys() and (datetime.datetime.now() - dictGames[room_name].lastAccessed < datetime.timedelta(minutes=120)):
                 return render_template('index.html', error_message="Room already exists.")
 
             else:
+                # Possible memory leakage, should delete expired rooms here.
                 newGame = Game()
-                newGame.playerNames[0] = request.form.get('player_name')
-                newGame.playerLogOnStatus[0] = True
-                newGame.room_name = req_room_name
-                newGame.lastAccessed = datetime.datetime.now()
+                newGame.createGame(request.form.get('player_name'), req_room_name)
                 dictGames[req_room_name] = newGame
 
                 print("Current Games Keys:")
@@ -168,18 +172,15 @@ def loadRoom():
 
             else:
                 if dictGames[req_room_name].playerLogOnStatus[1] == False:
-                    dictGames[req_room_name].playerNames[1] = request.form.get('player_name')
-                    dictGames[req_room_name].playerLogOnStatus[1] = True
-                    dictGames[req_room_name].lastAccessed = datetime.datetime.now()
-                    dictGames[req_room_name].chooseRole = True
+                    dictGames[req_room_name].joinGame(request.form.get('player_name'))
 
                     return render_template('gameplay.html', gameConfig=dictGames[req_room_name], player=1)
-
+                
                 else:
-                    return render_template('index.html', error_message="Room full.")
+                    return render_template('index.html', error_message="Room full.")  
 
     else:
-        return render_template('gameplay.html')
+        return render_template('index.html', error_message="Unknown request.")
 
 @socketio.on('connect')
 def test_connect():
@@ -205,7 +206,6 @@ def turn_played(data):
     color = int(data['color'])
 
     if room_name in dictGames.keys():
-        dictGames[room_name].lastAccessed = datetime.datetime.now()
         (i,j) = (int(cell[5]), int(cell[7])) # passing cell-id. By the naming convention, their co-ordinates are stored as the 5th and 7th char in string.
 
         dictGames[room_name].turn_played((i,j), color, playerIndex)
@@ -247,7 +247,6 @@ def surrender(data):
     playerIndex = int(data['playerIndex'])
 
     if room_name in dictGames.keys():
-        dictGames[room_name].lastAccessed = datetime.datetime.now()
         dictGames[room_name].surrender(playerIndex)
 
         emit('game_over', {'winner': dictGames[room_name].winner, 'score': dictGames[room_name].score}, room=data['room'])
@@ -265,12 +264,5 @@ def send_message(data):
 def serverCleanUp():
     cleanUp()
 
-# print("BackgroundScheduler started")
-# backgroundCleanup = BackgroundScheduler()
-# backgroundCleanup.add_job(func=cleanUp, trigger="interval", hours=1)
-# backgroundCleanup.start()
-
 if __name__ == '__main__':
-    # Bind to PORT if defined, otherwise default to 5000.
-    #port = int(os.environ.get('PORT', 5000))
     socketio.run(app)

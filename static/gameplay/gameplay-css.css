@@ -65,8 +65,23 @@
 	margin: auto;
 }
 
+.loading-div {
+	width: 50%;
+	padding-bottom: 50%;
+	border: 3px solid #f3f3f3; /* Light grey */
+	border-top: 3px solid #3498db; /* Blue */
+	border-radius: 50%;
+	animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+}
+
 .player-loading {
 	width: 10%;
+	visibility: hidden;
 }
 
 .player-role {
@@ -114,8 +129,8 @@
 .game-tile {
 	height: 50px;
 	width: 50px;
-	border:1px black solid;
-	border-radius: 2px;
+	border: 1px DarkGray solid;
+	border-radius: 0px;
 	background: white;
 }
 
