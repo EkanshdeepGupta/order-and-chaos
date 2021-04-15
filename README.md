@@ -1,7 +1,7 @@
 # Order And Chaos
 My 2-player webgame implementation of the game Order and Chaos. I found out about the game from Tom Scott (https://youtu.be/qsjVfJur1ac)
 
-Play at: play-order-chaos.herokuapp.com
+Play at: https://play-order-chaos.herokuapp.com
 
 # To Do:
 
