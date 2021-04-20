@@ -150,7 +150,7 @@ def loadRoom():
         if playerIndex == 0:
             print("Room create request: " + str(req_room_name))
 
-            if req_room_name in dictGames.keys() and (datetime.datetime.now() - dictGames[room_name].lastAccessed < datetime.timedelta(minutes=120)):
+            if req_room_name in dictGames.keys() and (datetime.datetime.now() - dictGames[room_name].lastAccessed < datetime.timedelta(minutes=10)):
                 return render_template('index.html', error_message="Room already exists.")
 
             else:
